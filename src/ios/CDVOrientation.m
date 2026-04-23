@@ -49,7 +49,9 @@
     } else {
         if (_lastOrientation != UIInterfaceOrientationUnknown) {
             [[UIDevice currentDevice] setValue:[NSNumber numberWithInt:_lastOrientation] forKey:@"orientation"];
-            ((void (*)(CDVViewController*, SEL, NSMutableArray*))objc_msgSend)(vc,selector,result);
+            if ([vc respondsToSelector:selector]) {
+                ((void (*)(CDVViewController*, SEL, NSMutableArray*))objc_msgSend)(vc,selector,result);
+            }
             [UINavigationController attemptRotationToDeviceOrientation];
         }
     }
@@ -84,7 +86,9 @@
             value = [[UIWindowSceneGeometryPreferencesIOS alloc] initWithInterfaceOrientations:UIInterfaceOrientationMaskPortraitUpsideDown];
         }
     } else {
-        ((void (*)(CDVViewController*, SEL, NSMutableArray*))objc_msgSend)(vc,selector,result);
+        if ([vc respondsToSelector:selector]) {
+            ((void (*)(CDVViewController*, SEL, NSMutableArray*))objc_msgSend)(vc,selector,result);
+        }
     }
     if (value != nil) {
         _isLocked = true;
@@ -140,20 +144,20 @@
     }
     SEL selector = NSSelectorFromString(@"setSupportedOrientations:");
     
-    if([vc respondsToSelector:selector]) {
+    // Call setSupportedOrientations: only if available (cordova-ios 7 and below).
+    // cordova-ios 8 removed this method from CDVViewController; proceeding without
+    // it is safe because handleWithOrientationMask uses modern iOS 16+ scene APIs.
+    if ([vc respondsToSelector:selector]) {
         if (orientationMask != 15 || [UIDevice currentDevice] == nil) {
             ((void (*)(CDVViewController*, SEL, NSMutableArray*))objc_msgSend)(vc,selector,result);
         }
+    }
 
-        if ([UIDevice currentDevice] != nil){
-            [self handleWithOrientationMask:orientationMask viewController:vc result:result selector:selector];
-        }
-        
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    if ([UIDevice currentDevice] != nil) {
+        [self handleWithOrientationMask:orientationMask viewController:vc result:result selector:selector];
     }
-    else {
-        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_INVALID_ACTION messageAsString:@"Error calling to set supported orientations"];
-    }
+
+    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     

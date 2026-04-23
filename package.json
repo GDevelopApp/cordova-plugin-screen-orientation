@@ -1,15 +1,15 @@
 {
-  "name": "cordova-plugin-screen-orientation",
-  "version": "3.0.4",
-  "description": "Cordova Screen Orientation plugin",
-  "repository": "github:apache/cordova-plugin-screen-orientation",
-  "bugs": "https://github.com/apache/cordova-plugin-screen-orientation/issues",
+  "name": "gdevelop-cordova-plugin-screen-orientation",
+  "version": "3.0.4.patch.1",
+  "description": "Cordova Screen Orientation plugin (GDevelop fork, patched for cordova-ios 8 compatibility)",
+  "repository": "github:GDevelopApp/cordova-plugin-screen-orientation",
+  "bugs": "https://github.com/GDevelopApp/cordova-plugin-screen-orientation/issues",
   "scripts": {
     "test": "npm run lint",
     "lint": "eslint ."
   },
   "cordova": {
-    "id": "cordova-plugin-screen-orientation",
+    "id": "gdevelop-cordova-plugin-screen-orientation",
     "platforms": [
       "android",
       "ios",
