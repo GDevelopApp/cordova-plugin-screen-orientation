@@ -26,6 +26,11 @@
 @interface CDVOrientation () {}
 @end
 
+// Interface orientations currently allowed; updated on each lock/unlock.
+// cordova-ios 8 removed CDVViewController's dynamic supported-orientation handling,
+// so the category at the bottom of this file restores it from this value.
+static UIInterfaceOrientationMask _gdSupportedOrientationMask = 0;
+
 @implementation CDVOrientation
 
 
@@ -142,6 +147,16 @@
     if(orientationMask & 8) {
         [result addObject:[NSNumber numberWithInt:UIInterfaceOrientationLandscapeLeft]];
     }
+
+    // Remember the allowed set so the CDVViewController category below can report it
+    // to iOS. cordova-ios 8 no longer constrains rotation itself, so without this the
+    // view controller keeps allowing every orientation and a lock never holds.
+    UIInterfaceOrientationMask supportedMask = 0;
+    for (NSNumber* orientation in result) {
+        supportedMask |= (1 << [orientation integerValue]);
+    }
+    _gdSupportedOrientationMask = supportedMask;
+
     SEL selector = NSSelectorFromString(@"setSupportedOrientations:");
     
     // Call setSupportedOrientations: only if available (cordova-ios 7 and below).
@@ -160,7 +175,22 @@
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    
+
 }
 
+@end
+
+// cordova-ios 8 dropped CDVViewController's dynamic supported-orientation handling
+// (a side effect of the move to the scene-based lifecycle), so iOS would query the
+// view controller and allow every orientation, breaking lock(). This category restores
+// the gate the modern way: the plugin stores the requested mask, calls
+// setNeedsUpdateOfSupportedInterfaceOrientations, and iOS re-queries this method.
+@implementation CDVViewController (GDScreenOrientation)
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations
+{
+    if (_gdSupportedOrientationMask == 0) {
+        return UIInterfaceOrientationMaskAllButUpsideDown;
+    }
+    return _gdSupportedOrientationMask;
+}
 @end
